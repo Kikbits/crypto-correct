@@ -1,0 +1,29 @@
+[data-tip] {
+    position:relative;
+}
+[data-tip]:after {
+    display:none;
+    content:attr(data-tip);
+    position:absolute;
+    padding:5px 8px;
+    background:#1a1a1a;
+    color:#fff;
+    z-index:9;
+    font-size: 12px;
+    height: 26px;
+    line-height:18px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    white-space:nowrap;
+    word-wrap:normal;
+    top: -1px;
+    margin-left: 7px;
+}
+[data-tip]:hover:after {
+    display:inline;
+}
+
+.left-table-wrapper,.right-table-wrapper {
+    overflow-x: visible !important;
+}
