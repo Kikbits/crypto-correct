@@ -1,4 +1,4 @@
-(function($) {
+(function($, window, document) {
   var marketName = null;
   var btcPrice = null;
   var ethPrice = null;
@@ -10,6 +10,9 @@
       if (pageType == "EXCHANGE_PAGE") {
         initializeExchangePage();
       }
+      else if(pageType == "BALANCE_PAGE"){
+        initializeBalancePage();
+      }
       else {
         btcTooltip();
         etherTooltip();
@@ -18,7 +21,87 @@
 
     pollPrices();
 	}
-	
+
+    function setLoadingTooltip($elem){
+      $elem.attr('data-tip', "Calculating..");
+    }
+
+	function initializeBalancePage(){
+      $(document).on("mouseover", 'td.number.sorting_1', function (e) {
+        var $target = $(e.target);
+
+        if ($target[0].tagName != "td") {
+          $target = $target.closest("td");
+        }
+        setPriceTooltip($target, btcPrice);
+      });
+
+      $(document).on("mouseover", '#withdrawalHistoryTable td.number, #depositHistoryTable td.number', function (e) {
+        var $target = $(e.target);
+
+        if ($target[0].tagName != "td") {
+          $target = $target.closest("td");
+        }
+        var coinUnits =  $target.text();
+        var lastTime = $target.attr('last-time');
+        if(lastTime){
+          var thisTime = parseInt(new Date().getTime() / 1000);
+          if(thisTime - lastTime < 20) {
+            var inBtc = $target.attr('in-btc');
+            var coinPrice = (parseFloat(coinUnits)* inBtc * btcPrice);
+            if (coinPrice < 1) {
+              coinPrice = coinPrice.toFixed(6);
+            }
+            else {
+              coinPrice = coinPrice.toFixed(2);
+            }
+            $target.attr('data-tip', "$" + coinPrice);
+          }
+          else{
+            calculateAndShowInUSD($target, coinUnits);
+          }
+        }
+        else{
+          calculateAndShowInUSD($target, coinUnits);
+        }
+      });
+    }
+    function calculateAndShowInUSD($target, coinUnits){
+      setLoadingTooltip($target);
+      var coinName = $($target.siblings('td.text')[1]).text();
+      if(coinName != 'BTC') {
+        $.get(Config.bittrexApiUrlV1 + "/public/getticker?market=BTC-" + coinName).then(function (response) {
+          if (response.success) {
+            var inBtc = response.result.Last;
+            $target.attr('last-time', parseInt(new Date().getTime() / 1000));
+            $target.attr('in-btc', inBtc);
+            var coinPrice = inBtc * btcPrice *parseFloat(coinUnits);
+            if (coinPrice < 1) {
+              coinPrice = coinPrice.toFixed(6);
+            }
+            else {
+              coinPrice = coinPrice.toFixed(2);
+            }
+            $target.attr('data-tip', "$" + coinPrice);
+          }
+          else {
+            console.error(response.error);
+          }
+        });
+      }
+      else{
+        $target.attr('last-time', parseInt(new Date().getTime() / 1000));
+        $target.attr('in-btc', 1);
+        var coinPrice = parseFloat(coinUnits) * btcPrice;
+        if (coinPrice < 1) {
+          coinPrice = coinPrice.toFixed(6);
+        }
+        else {
+          coinPrice = coinPrice.toFixed(2);
+        }
+        $target.attr('data-tip', "$" + coinPrice);
+      }
+    }
 	function initializeExchangePage() {
 	  $(document).on("mouseover", '[data-bind="text: displayRate, click: clickRate"],[data-bind="text: displayPrice"],[data-bind="text: displayCost"]', function (e) {
       var $target = $(e.target);
@@ -98,10 +181,10 @@
 
   function priceInUSD(marketName) {
     var priceInUSD = null;
-    if (marketName == "BTC") {
+    if (marketName == "BTC" || marketName == "btc") {
       priceInUSD = getBTCtoUSD();
     }
-    else if (marketName == "ETH") {
+    else if (marketName == "ETH" || marketName == "eth") {
       priceInUSD = getETHtoUSD()
     }
 
@@ -121,10 +204,13 @@
   function getPageType() {
     var pageType = "HOME_PAGE";
     marketName = getQueryParam("MarketName");
-
+    var isBalancePage = window.location.href.indexOf('balance')> -1;
     if (marketName) {
       pageType = "EXCHANGE_PAGE";
       marketName = marketName.split("-")[0];
+    }
+    else if(isBalancePage){
+      pageType = "BALANCE_PAGE";
     }
 
     return  pageType;
@@ -156,7 +242,7 @@
           });
         }
         else {
-          console.error(response.error);
+          console.error(data.error);
         }
       });
     }
@@ -186,5 +272,5 @@
   };
 
 	init();
-})(jQuery);
+})(jQuery, window, document);
 //class="tooltip" data-tip="this is the tip!"
