@@ -2,6 +2,7 @@
   var marketName = null;
   var btcPrice = null;
   var ethPrice = null;
+  var coinPriceInBtc = [];
 
 	function init() {
     window.onload = function () {
@@ -38,16 +39,16 @@
 
       $(document).on("mouseover", '#withdrawalHistoryTable td.number, #depositHistoryTable td.number', function (e) {
         var $target = $(e.target);
-
         if ($target[0].tagName != "td") {
           $target = $target.closest("td");
         }
+        var coinName = $($target.siblings('td.text')[1]).text();
         var coinUnits =  $target.text();
-        var lastTime = $target.attr('last-time');
-        if(lastTime){
+        if(coinPriceInBtc[coinName]){
+          var lastTime = coinPriceInBtc[coinName].lastTime;
           var thisTime = parseInt(new Date().getTime() / 1000);
-          if(thisTime - lastTime < 20) {
-            var inBtc = $target.attr('in-btc');
+          if(thisTime - lastTime < 20 || coinName == 'BTC') {
+            var inBtc = coinPriceInBtc[coinName].inBtc;
             var coinPrice = (parseFloat(coinUnits)* inBtc * btcPrice);
             if (coinPrice < 1) {
               coinPrice = coinPrice.toFixed(6);
@@ -58,23 +59,23 @@
             $target.attr('data-tip', "$" + coinPrice);
           }
           else{
-            calculateAndShowInUSD($target, coinUnits);
+            calculateAndShowInUSD($target, coinName, coinUnits);
           }
         }
         else{
-          calculateAndShowInUSD($target, coinUnits);
+          calculateAndShowInUSD($target, coinName, coinUnits);
         }
       });
     }
-    function calculateAndShowInUSD($target, coinUnits){
+    function calculateAndShowInUSD($target, coinName, coinUnits){
       setLoadingTooltip($target);
-      var coinName = $($target.siblings('td.text')[1]).text();
       if(coinName != 'BTC') {
         $.get(Config.bittrexApiUrlV1 + "/public/getticker?market=BTC-" + coinName).then(function (response) {
           if (response.success) {
             var inBtc = response.result.Last;
-            $target.attr('last-time', parseInt(new Date().getTime() / 1000));
-            $target.attr('in-btc', inBtc);
+            coinPriceInBtc[coinName] = coinPriceInBtc[coinName] || {};
+            coinPriceInBtc[coinName].inBtc = inBtc;
+            coinPriceInBtc[coinName].lastTime = parseInt(new Date().getTime() / 1000);
             var coinPrice = inBtc * btcPrice *parseFloat(coinUnits);
             if (coinPrice < 1) {
               coinPrice = coinPrice.toFixed(6);
@@ -90,8 +91,9 @@
         });
       }
       else{
-        $target.attr('last-time', parseInt(new Date().getTime() / 1000));
-        $target.attr('in-btc', 1);
+        coinPriceInBtc[coinName] = coinPriceInBtc[coinName] || {};
+        coinPriceInBtc[coinName].inBtc = 1;
+        coinPriceInBtc[coinName].lastTime = 0;
         var coinPrice = parseFloat(coinUnits) * btcPrice;
         if (coinPrice < 1) {
           coinPrice = coinPrice.toFixed(6);
@@ -204,7 +206,7 @@
   function getPageType() {
     var pageType = "HOME_PAGE";
     marketName = getQueryParam("MarketName");
-    var isBalancePage = window.location.href.indexOf('balance')> -1;
+    var isBalancePage = window.location.href.indexOf('balance')> -1 || window.location.href.indexOf('Balance')> -1;
     if (marketName) {
       pageType = "EXCHANGE_PAGE";
       marketName = marketName.split("-")[0];
