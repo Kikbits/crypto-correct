@@ -13,7 +13,7 @@
 
   "content_scripts": [
     {
-      "matches": ["*://bittrex.com/*"],
+      "matches": ["*://*.bittrex.com/*"],
       "css": ["css/main.css"],
       "js": ["js/vendor/jquery.min.js", "js/vendor/arrive.min.js", "js/config.js", "js/contentScript.js"],
       "run_at": "document_start"
