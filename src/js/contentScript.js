@@ -126,6 +126,25 @@
       }
       setPriceTooltip($target, priceInUSD(marketName));
     });
+
+      setInterval(function(){
+        var $textEls = $('div.amcharts-chart-div g:nth-child(14) > g:nth-child(1) >text');
+        if($textEls.length === 0) return;
+        $('div.chart-wrapper #chartPriceinUSD').remove();
+        var chartPriceInUSD = $(`<div id="chartPriceinUSD"></div>`);
+        $textEls.each(function(i, el){
+          var $tspan = $(el).find('tspan');
+          var unitChartValue= parseFloat($tspan.text());
+          var inUSD = unitChartValue*priceInUSD(marketName);
+          inUSD = inUSD === 0 ? 0 :
+              inUSD > 1 ? inUSD.toFixed(2) : inUSD.toFixed(6);
+          var inUSDEl = inUSD > 1 ? $('<p style="position:relative; display: inline-block; margin-right:37px; top: -20px; transform: rotate(330deg);">$'+inUSD+'</p>') :
+              $('<p style="position:relative; display: inline-block; margin-right:15px; top: -20px; transform: rotate(330deg);">$'+inUSD+'</p>');
+          $(chartPriceInUSD).append(inUSDEl);
+        });
+        $('div.chart-wrapper').append(chartPriceInUSD)
+      },1000);
+      
     $(document).on("mouseover", "#closedMarketOrdersTable td.number", function(e) {
       var $target = $(e.target);
 
