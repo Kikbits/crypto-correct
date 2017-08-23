@@ -28,35 +28,48 @@
     }
 
 	function initializeBalancePage(){
-      $(document).on("mouseover", 'td.number.sorting_1', function (e) {
-        var $target = $(e.target);
-
-        if ($target[0].tagName != "td") {
-          $target = $target.closest("td");
-        }
-        setPriceTooltip($target, btcPrice);
-      });
-
-      $(document).on("mouseover", '#withdrawalHistoryTable td.number, #depositHistoryTable td.number', function (e) {
+      var headerNames = ["Available Balance", "Pending Deposit", "Reserved", "Total", "Est. BTC Value", "Units"];
+      $(document).on("mouseover", ' #balanceTable td.number,'+
+          '#withdrawalHistoryTable td.number, #depositHistoryTable td.number', function (e) {
         var $target = $(e.target);
         if ($target[0].tagName != "td") {
           $target = $target.closest("td");
         }
-        var coinName = $($target.siblings('td.text')[1]).text();
+        var headerName = $($target.closest('table').find('th')[$target.index()]).text();
+        if(headerNames.indexOf(headerName) === -1){
+          return;
+        }
+        if($(window).width() - ($target.offset().left + $target.width()) < 150){
+          if(!$target.hasClass('closeToScreen')){
+            $target.addClass('closeToScreen');
+          }
+        }
+        else{
+          if($target.hasClass('closeToScreen')){
+            $target.removeClass('closeToScreen');
+          }
+        }
+        if(headerName === "Est. BTC Value"){
+          setPriceTooltip($target, btcPrice);
+          return;
+        }
+        var coinName = ($target.closest('#balanceTable').length > 0) ? $($target.siblings('td.text')[0]).text():
+                        $($target.siblings('td.text')[1]).text();
         var coinUnits =  $target.text();
+
         if(coinPriceInBtc[coinName]){
           var lastTime = coinPriceInBtc[coinName].lastTime;
           var thisTime = parseInt(new Date().getTime() / 1000);
           if(thisTime - lastTime < 20 || coinName == 'BTC') {
             var inBtc = coinPriceInBtc[coinName].inBtc;
             var coinPrice = (parseFloat(coinUnits)* inBtc * btcPrice);
-            if (coinPrice < 1) {
-              coinPrice = coinPrice.toFixed(6);
-            }
-            else {
-              coinPrice = coinPrice.toFixed(2);
-            }
-            $target.attr('data-tip', "$" + coinPrice);
+            coinPrice = (coinPrice === 0) ? 0 :
+                        (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
+            var unitPrice = inBtc * btcPrice;
+            $target.attr('data-tip',
+                "Total: $" + coinPrice+"\n"+
+                "Unit Price: $"+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))
+            );
           }
           else{
             calculateAndShowInUSD($target, coinName, coinUnits);
@@ -77,13 +90,13 @@
             coinPriceInBtc[coinName].inBtc = inBtc;
             coinPriceInBtc[coinName].lastTime = parseInt(new Date().getTime() / 1000);
             var coinPrice = inBtc * btcPrice *parseFloat(coinUnits);
-            if (coinPrice < 1) {
-              coinPrice = coinPrice.toFixed(6);
-            }
-            else {
-              coinPrice = coinPrice.toFixed(2);
-            }
-            $target.attr('data-tip', "$" + coinPrice);
+            coinPrice = (coinPrice === 0) ? 0 :
+                        (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
+            var unitPrice = inBtc * btcPrice;
+            $target.attr('data-tip',
+                "Total: $" + coinPrice+'\n'+
+                'Unit Price: $'+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))
+            );
           }
           else {
             console.error(response.error);
@@ -95,13 +108,13 @@
         coinPriceInBtc[coinName].inBtc = 1;
         coinPriceInBtc[coinName].lastTime = 0;
         var coinPrice = parseFloat(coinUnits) * btcPrice;
-        if (coinPrice < 1) {
-          coinPrice = coinPrice.toFixed(6);
-        }
-        else {
-          coinPrice = coinPrice.toFixed(2);
-        }
-        $target.attr('data-tip', "$" + coinPrice);
+        coinPrice = (coinPrice === 0) ? 0 :
+                    (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
+
+        $target.attr('data-tip',
+            "Total: $" + coinPrice+' \n'+
+            'Unit Price: $'+ (1 * ((btcPrice > 1) ? btcPrice.toFixed(2) : btcPrice.toFixed(6)))
+        );
       }
     }
 	function initializeExchangePage() {
@@ -111,12 +124,10 @@
       if ($target[0].tagName != "td") {
         $target = $target.closest("td");
       }
-
       setPriceTooltip($target, priceInUSD(marketName));
     });
-
-	  $(document).on("mouseover", "#closedMarketOrdersTable td.number", function(e) {
-      $target = $(e.target);
+    $(document).on("mouseover", "#closedMarketOrdersTable td.number", function(e) {
+      var $target = $(e.target);
 
       var header = $target.closest("table").find("th:nth-child(" + ($target.index() + 1) + ")").text();
 
@@ -127,49 +138,33 @@
   }
 
   function btcTooltip(){
-    $(document).arrive('div.col-md-12:first-child tr:nth-child(2)',{fireOnAttributesModification: true, existing: true},function(){
-      var btcRows = $('div.col-md-12:first tr');
-      if(btcRows.length > 1){
-        btcRows.each(function(i, el){
-          if(i>0) {
-            $(el).find('td:nth-child(5)').mouseover(function () {
-              var btcToUSD = getBTCtoUSD();
-              setPriceTooltip($(this), btcToUSD);
-            });
-            $(el).find('td:nth-child(6)').mouseover(function () {
-              var btcToUSD = getBTCtoUSD();
-              setPriceTooltip($(this), btcToUSD);
-            });
-            $(el).find('td:nth-child(7)').mouseover(function () {
-              var btcToUSD = getBTCtoUSD();
-              setPriceTooltip($(this), btcToUSD);
-            });
-          }
-        });
+    var headerNames = ["Last Price", "24Hr High", "24Hr Low"];
+    $(document).on("mouseover", 'table:nth(2) td.number', function (e) {
+      var $target = $(e.target);
+      if ($target[0].tagName != "td") {
+        $target = $target.closest("td");
       }
+      var headerName = $($target.closest('table').find('th')[$target.index()]).text().trim();
+      if(headerNames.indexOf(headerName) === -1){
+        return;
+      }
+      var btcToUSD = getBTCtoUSD();
+      setPriceTooltip($target, btcToUSD);
     });
   }
   function etherTooltip(){
-    $(document).arrive('div.col-md-12:nth-child(2) tr:nth-child(2)',{fireOnAttributesModification: true, existing: true},function(){
-      var etherRows = $('div.col-md-12:nth-child(2) tr');
-      if(etherRows.length > 1){
-        etherRows.each(function(i, el){
-          if(i>0) {
-            $(el).find('td:nth-child(5)').mouseover(function () {
-              var etherToUSD = getETHtoUSD();
-              setPriceTooltip($(this), etherToUSD);
-            });
-            $(el).find('td:nth-child(6)').mouseover(function () {
-              var etherToUSD = getETHtoUSD();
-              setPriceTooltip($(this), etherToUSD);
-            });
-            $(el).find('td:nth-child(7)').mouseover(function () {
-              var etherToUSD = getETHtoUSD();
-              setPriceTooltip($(this), etherToUSD);
-            });
-          }
-        });
+    var headerNames = ["Last Price", "24Hr High", "24Hr Low"];
+    $(document).on("mouseover", 'table:nth(3) td.number', function (e) {
+      var $target = $(e.target);
+      if ($target[0].tagName != "td") {
+        $target = $target.closest("td");
       }
+      var headerName = $($target.closest('table').find('th')[$target.index()]).text().trim();
+      if(headerNames.indexOf(headerName) === -1){
+        return;
+      }
+      var etherToUSD = getETHtoUSD();
+      setPriceTooltip($target, etherToUSD);
     });
   }
 
@@ -253,14 +248,8 @@
   function setPriceTooltip($elem, basePriceInUSD) {
     var price = $elem.text();
     var inUSD = parseFloat(basePriceInUSD) * parseFloat(price);
-
-    if (inUSD < 1) {
-      inUSD = inUSD.toFixed(6);
-    }
-    else {
-      inUSD = inUSD.toFixed(2);
-    }
-
+    inUSD = (inUSD === 0) ? 0 :
+        (inUSD > 1) ? inUSD.toFixed(2) : inUSD.toFixed(6);
     $elem.attr('data-tip', "$" + inUSD);
   }
 
@@ -275,4 +264,3 @@
 
 	init();
 })(jQuery, window, document);
-//class="tooltip" data-tip="this is the tip!"

@@ -10,18 +10,21 @@
     color:#fff;
     z-index:9;
     font-size: 12px;
-    height: 26px;
     line-height:18px;
     -webkit-border-radius: 3px;
     -moz-border-radius: 3px;
     border-radius: 3px;
-    white-space:nowrap;
+    white-space:pre;
     word-wrap:normal;
     top: -1px;
     margin-left: 7px;
 }
 [data-tip]:hover:after {
     display:inline;
+}
+
+.closeToScreen[data-tip]:after{
+    margin-left: -200px;
 }
 
 .left-table-wrapper,.right-table-wrapper {
