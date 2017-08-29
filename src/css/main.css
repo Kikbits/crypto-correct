@@ -1,31 +1,19 @@
-[data-tip] {
-    position:relative;
-}
-[data-tip]:after {
-    display:none;
-    content:attr(data-tip);
-    position:absolute;
+.tooltip-class {
     padding:5px 8px;
     background:#1a1a1a;
-    color:#fff;
+    color: #858585;
     z-index:9;
     font-size: 12px;
     line-height:18px;
     -webkit-border-radius: 3px;
     -moz-border-radius: 3px;
     border-radius: 3px;
-    white-space:pre;
-    word-wrap:normal;
     top: -1px;
-    margin-left: 7px;
     text-align: left;
 }
-[data-tip]:hover:after {
-    display:inline;
-}
 
-.closeToScreen[data-tip]:after{
-    margin-left: -200px;
+.tooltip-price {
+    color: #ffffff;
 }
 
 .left-table-wrapper,.right-table-wrapper {

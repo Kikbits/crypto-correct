@@ -24,7 +24,7 @@
 	}
 
     function setLoadingTooltip($elem){
-      $elem.attr('data-tip', "Calculating..");
+      $elem.tooltip('option', 'content', "Calculating...");
     }
 
     function setTotalAndUnitTooltip($target, inBtc, coinUnits) {
@@ -32,12 +32,46 @@
       var coinPrice = parseFloat(coinUnits) * unitPrice;
       coinPrice = (coinPrice === 0) ? 0 :
           (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
-      $target.attr('data-tip',
-          "Total: $" + coinPrice+"\n"+
-          "Rate: $"+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))
+
+      $target.tooltip('option',
+        'content', "Total: <span class='tooltip-price'>$" + coinPrice+"</span><br />"+
+          "Rate: <span class='tooltip-price'>$"+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))+'</span>'
       );
     }
-
+    function initTooltip($target){
+      $target.attr('title', '');
+      $target.tooltip({
+		content: 'Loading',
+        show: false,
+        hide: false,
+        classes: {
+          "ui-tooltip": "tooltip-class"
+        }
+      });
+      setTooltipPosition($target);
+	  $target.tooltip('open');
+	  $(document).bind("DOMNodeRemoved", function(e) {
+	  	if(e.target == $target[0] || e.target == $target.parent('tr')[0]){
+	  		$target.tooltip('destroy');
+	  	}
+	  });
+    }
+  function setTooltipPosition($target){
+    if($(window).width() - ($target.offset().left + $target.width()) < 150){
+      $target.tooltip('option', 'position', {
+        my: "left center",
+        at: "left center",
+        collision: "none"
+      });
+    }
+    else{
+      $target.tooltip('option', 'position', {
+        my: "left center",
+        at: "right-2 center",
+        collision: "none"
+      });
+    }
+  }
 	function initializeBalancePage(){
       var headerNames = ["Available Balance", "Pending Deposit", "Reserved", "Total", "Est. BTC Value", "Units"];
       $(document).on("mouseover", ' #balanceTable td.number,'+
@@ -50,16 +84,7 @@
         if(headerNames.indexOf(headerName) === -1){
           return;
         }
-        if($(window).width() - ($target.offset().left + $target.width()) < 150){
-          if(!$target.hasClass('closeToScreen')){
-            $target.addClass('closeToScreen');
-          }
-        }
-        else{
-          if($target.hasClass('closeToScreen')){
-            $target.removeClass('closeToScreen');
-          }
-        }
+		initTooltip($target);
         if(headerName === "Est. BTC Value"){
           setPriceTooltip($target, btcPrice);
           return;
@@ -115,6 +140,7 @@
       if ($target[0].tagName != "td") {
         $target = $target.closest("td");
       }
+      initTooltip($target);
       setPriceTooltip($target, priceInUSD(marketName));
     });
     $(document).on("mouseover", "#closedMarketOrdersTable td.number", function(e) {
@@ -140,6 +166,7 @@
         return;
       }
       var btcToUSD = getBTCtoUSD();
+	  initTooltip($target);
       setPriceTooltip($target, btcToUSD);
     });
   }
@@ -155,6 +182,7 @@
         return;
       }
       var etherToUSD = getETHtoUSD();
+	  initTooltip($target);
       setPriceTooltip($target, etherToUSD);
     });
   }
@@ -241,7 +269,9 @@
     var inUSD = parseFloat(basePriceInUSD) * parseFloat(price);
     inUSD = (inUSD === 0) ? 0 :
         (inUSD > 1) ? inUSD.toFixed(2) : inUSD.toFixed(6);
-    $elem.attr('data-tip', "$" + inUSD);
+	  $elem.tooltip('option',
+		  'content', "<span class='tooltip-price'>$" + inUSD+"</span>"
+	  );
   }
 
   $.expr.filters.offscreen = function(el) {

@@ -14,8 +14,8 @@
   "content_scripts": [
     {
       "matches": ["*://*.bittrex.com/*"],
-      "css": ["css/main.css"],
-      "js": ["js/vendor/jquery.min.js", "js/config.js", "js/contentScript.js"],
+      "css": ["css/jquery-ui.min.css", "css/jquery-ui.structure.min.css", "css/jquery-ui.theme.min.css", "css/main.css"],
+      "js": ["js/vendor/jquery.min.js", "js/vendor/jquery-ui.min.js", "js/config.js", "js/contentScript.js"],
       "run_at": "document_start"
     }
   ],
