@@ -27,6 +27,17 @@
       $elem.attr('data-tip', "Calculating..");
     }
 
+    function setTotalAndUnitTooltip($target, inBtc, coinUnits) {
+      var unitPrice = inBtc * btcPrice;
+      var coinPrice = parseFloat(coinUnits) * unitPrice;
+      coinPrice = (coinPrice === 0) ? 0 :
+          (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
+      $target.attr('data-tip',
+          "Total: $" + coinPrice+"\n"+
+          "Rate: $"+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))
+      );
+    }
+
 	function initializeBalancePage(){
       var headerNames = ["Available Balance", "Pending Deposit", "Reserved", "Total", "Est. BTC Value", "Units"];
       $(document).on("mouseover", ' #balanceTable td.number,'+
@@ -62,14 +73,7 @@
           var thisTime = parseInt(new Date().getTime() / 1000);
           if(thisTime - lastTime < 20 || coinName == 'BTC') {
             var inBtc = coinPriceInBtc[coinName].inBtc;
-            var coinPrice = (parseFloat(coinUnits)* inBtc * btcPrice);
-            coinPrice = (coinPrice === 0) ? 0 :
-                        (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
-            var unitPrice = inBtc * btcPrice;
-            $target.attr('data-tip',
-                "Total: $" + coinPrice+"\n"+
-                "Unit Price: $"+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))
-            );
+            setTotalAndUnitTooltip($target, inBtc, coinUnits);
           }
           else{
             calculateAndShowInUSD($target, coinName, coinUnits);
@@ -80,6 +84,7 @@
         }
       });
     }
+
     function calculateAndShowInUSD($target, coinName, coinUnits){
       setLoadingTooltip($target);
       if(coinName != 'BTC') {
@@ -89,14 +94,7 @@
             coinPriceInBtc[coinName] = coinPriceInBtc[coinName] || {};
             coinPriceInBtc[coinName].inBtc = inBtc;
             coinPriceInBtc[coinName].lastTime = parseInt(new Date().getTime() / 1000);
-            var coinPrice = inBtc * btcPrice *parseFloat(coinUnits);
-            coinPrice = (coinPrice === 0) ? 0 :
-                        (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
-            var unitPrice = inBtc * btcPrice;
-            $target.attr('data-tip',
-                "Total: $" + coinPrice+'\n'+
-                'Unit Price: $'+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))
-            );
+            setTotalAndUnitTooltip($target, inBtc, coinUnits);
           }
           else {
             console.error(response.error);
@@ -107,14 +105,7 @@
         coinPriceInBtc[coinName] = coinPriceInBtc[coinName] || {};
         coinPriceInBtc[coinName].inBtc = 1;
         coinPriceInBtc[coinName].lastTime = 0;
-        var coinPrice = parseFloat(coinUnits) * btcPrice;
-        coinPrice = (coinPrice === 0) ? 0 :
-                    (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
-
-        $target.attr('data-tip',
-            "Total: $" + coinPrice+' \n'+
-            'Unit Price: $'+ (1 * ((btcPrice > 1) ? btcPrice.toFixed(2) : btcPrice.toFixed(6)))
-        );
+        setTotalAndUnitTooltip($target, 1, coinUnits);
       }
     }
 	function initializeExchangePage() {
