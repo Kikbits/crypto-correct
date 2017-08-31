@@ -24,42 +24,62 @@
 
     pollPrices();
 	}
+    function checkWindowDistance($target, totalAndUnitClass){
+      if($(window).width() - ($target.offset().left + $target.width()) < 150){
+        if(!$tooltipEl.hasClass('closeToScreen')){
+          $tooltipEl.addClass('closeToScreen' + (totalAndUnitClass ? "" : " reduce-margin"));
+          if(totalAndUnitClass && $tooltipEl.hasClass("reduce-margin")){
+            $tooltipEl.removeClass("reduce-margin");
+          }
+        }
+      }
+      else{
+        if($tooltipEl.hasClass('closeToScreen')){
+          $tooltipEl.removeClass('closeToScreen reduce-margin');
+        }
+      }
+    }
     function setTooltip($target, html, totalAndUnitClass){
-      totalAndUnitClass = totalAndUnitClass || false;
-      if(totalAndUnitClass){
-        if(!$tooltipEl.hasClass('total-and-unit')){
-          $tooltipEl.addClass('total-and-unit');
+      if($target.is(":hover")){
+        totalAndUnitClass = totalAndUnitClass || false;
+        checkWindowDistance($target, totalAndUnitClass);
+        if(totalAndUnitClass){
+          if(!$tooltipEl.hasClass('total-and-unit')){
+            $tooltipEl.addClass('total-and-unit');
+          }
         }
-      }
-      else {
-        if($tooltipEl.hasClass('total-and-unit')){
-          $tooltipEl.removeClass('total-and-unit');
+        else {
+          if($tooltipEl.hasClass('total-and-unit')){
+            $tooltipEl.removeClass('total-and-unit');
+          }
         }
+        $tooltipEl.html(html);
+        if($target.find('#crypto-correct-tooltip').length == 0){
+          $target.append($tooltipEl);
+        }
+        $target.css('position', 'relative');
+        $tooltipEl.css('display', 'inline');
+        $target.mouseleave(function() {
+          $tooltipEl.css('display', 'none');
+        });
       }
-      $tooltipEl.html(html);
-      if($target.find('#crypto-correct-tooltip').length == 0){
-        $target.append($tooltipEl);
-      }
-      $target.css('position', 'relative');
-      $tooltipEl.css('display', 'inline');
-      $target.mouseleave(function() {
-        $tooltipEl.css('display', 'none');
-      });
     }
     function setLoadingTooltip($elem){
       var html = '<span class="crypto-correct-text">Calculating...</span>';
-      setTooltip($elem, html);
+      setTooltip($elem, html, true);
     }
-
+    function setDecimalPlaces(value){
+      return (value === 0) ? 0 :
+          (value > 1) ? value.toFixed(2) :
+          (value > 0.1) ? value.toFixed(4) : value.toFixed(6)  ;
+    }
     function setTotalAndUnitTooltip($target, inBtc, coinUnits) {
-      var unitPrice = inBtc * btcPrice;
-      var coinPrice = parseFloat(coinUnits) * unitPrice;
-      coinPrice = (coinPrice === 0) ? 0 :
-          (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
+      var unitPrice = setDecimalPlaces(inBtc * btcPrice);
+      var coinPrice = setDecimalPlaces(parseFloat(coinUnits) * unitPrice);
       var html =
           '<span class="crypto-correct-text">'+
             'Total: <span class="crypto-correct-price">$' + coinPrice+"</span><br />"+
-            'Rate: : <span class="crypto-correct-price">$'+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))+'</span>'+
+            'Rate: : <span class="crypto-correct-price">$'+ unitPrice +'</span>'+
            '</span>'
       ;
       setTooltip($target, html, true);
@@ -67,16 +87,14 @@
 
   function setPriceTooltip($elem, basePriceInUSD) {
     var price = $elem.text();
-    var inUSD = parseFloat(basePriceInUSD) * parseFloat(price);
-    inUSD = (inUSD === 0) ? 0 :
-        (inUSD > 1) ? inUSD.toFixed(2) : inUSD.toFixed(6);
+    var inUSD = setDecimalPlaces(parseFloat(basePriceInUSD) * parseFloat(price));
     var html = "<span class='crypto-correct-price'>$" + inUSD + "</span>";
     setTooltip($elem, html);
   }
 
 	function initializeBalancePage(){
       var headerNames = ["Available Balance", "Pending Deposit", "Reserved", "Total", "Est. BTC Value", "Units"];
-      $(document).on("mouseover", ' #balanceTable td.number,'+
+      $(document).on("mouseenter", ' #balanceTable td.number,'+
           '#withdrawalHistoryTable td.number, #depositHistoryTable td.number', function (e) {
         var $target = $(e.target);
         if ($target[0].tagName != "td") {
@@ -86,16 +104,7 @@
         if(headerNames.indexOf(headerName) === -1){
           return;
         }
-        if($(window).width() - ($target.offset().left + $target.width()) < 150){
-          if(!$tooltipEl.hasClass('closeToScreen')){
-            $tooltipEl.addClass('closeToScreen');
-          }
-        }
-        else{
-          if($tooltipEl.hasClass('closeToScreen')){
-            $tooltipEl.removeClass('closeToScreen');
-          }
-        }
+
         if(headerName === "Est. BTC Value"){
           setPriceTooltip($target, btcPrice);
           return;
@@ -145,7 +154,7 @@
       }
     }
 	function initializeExchangePage() {
-	  $(document).on("mouseover", '[data-bind="text: displayRate, click: clickRate"],[data-bind="text: displayPrice"],[data-bind="text: displayCost"]', function (e) {
+	  $(document).on("mouseenter", '[data-bind="text: displayRate, click: clickRate"],[data-bind="text: displayPrice"],[data-bind="text: displayCost"]', function (e) {
       var $target = $(e.target);
 
       if ($target[0].tagName != "td") {
@@ -153,7 +162,7 @@
       }
       setPriceTooltip($target, priceInUSD(marketName));
     });
-    $(document).on("mouseover", "#closedMarketOrdersTable td.number", function(e) {
+    $(document).on("mouseenter", "#closedMarketOrdersTable td.number", function(e) {
       var $target = $(e.target);
 
       var header = $target.closest("table").find("th:nth-child(" + ($target.index() + 1) + ")").text();
@@ -166,7 +175,7 @@
 
   function btcTooltip(){
     var headerNames = ["Last Price", "24Hr High", "24Hr Low"];
-    $(document).on("mouseover", 'table:nth(2) td.number', function (e) {
+    $(document).on("mouseenter", 'table:nth(2) td.number', function (e) {
       var $target = $(e.target);
       if ($target[0].tagName != "td") {
         $target = $target.closest("td");
@@ -181,7 +190,7 @@
   }
   function etherTooltip(){
     var headerNames = ["Last Price", "24Hr High", "24Hr Low"];
-    $(document).on("mouseover", 'table:nth(3) td.number', function (e) {
+    $(document).on("mouseenter", 'table:nth(3) td.number', function (e) {
       var $target = $(e.target);
       if ($target[0].tagName != "td") {
         $target = $target.closest("td");

@@ -33,6 +33,10 @@
     margin-left: -200px;
 }
 
+#crypto-correct-tooltip.closeToScreen.reduce-margin {
+    margin-left: -150px;
+}
+
 .left-table-wrapper,.right-table-wrapper {
     overflow-x: visible !important;
 }
