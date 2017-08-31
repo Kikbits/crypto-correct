@@ -1,9 +1,5 @@
-[data-tip] {
-    position:relative;
-}
-[data-tip]:after {
+#crypto-correct-tooltip {
     display:none;
-    content:attr(data-tip);
     position:absolute;
     padding:5px 8px;
     background:#1a1a1a;
@@ -20,11 +16,20 @@
     margin-left: 7px;
     text-align: left;
 }
-[data-tip]:hover:after {
-    display:inline;
+
+#crypto-correct-tooltip.total-and-unit {
+    top: -10px;
 }
 
-.closeToScreen[data-tip]:after{
+#crypto-correct-tooltip span.crypto-correct-text {
+    color: #868686;
+}
+
+#crypto-correct-tooltip span.crypto-correct-price {
+    color: #ffffff;
+}
+
+#crypto-correct-tooltip.closeToScreen {
     margin-left: -200px;
 }
 

@@ -3,7 +3,9 @@
   var btcPrice = null;
   var ethPrice = null;
   var coinPriceInBtc = [];
-
+  var $tooltipEl = $(
+      '<div id="crypto-correct-tooltip"></div>'
+  );
 	function init() {
     window.onload = function () {
       var pageType = getPageType();
@@ -22,9 +24,31 @@
 
     pollPrices();
 	}
-
+    function setTooltip($target, html, totalAndUnitClass){
+      totalAndUnitClass = totalAndUnitClass || false;
+      if(totalAndUnitClass){
+        if(!$tooltipEl.hasClass('total-and-unit')){
+          $tooltipEl.addClass('total-and-unit');
+        }
+      }
+      else {
+        if($tooltipEl.hasClass('total-and-unit')){
+          $tooltipEl.removeClass('total-and-unit');
+        }
+      }
+      $tooltipEl.html(html);
+      if($target.find('#crypto-correct-tooltip').length == 0){
+        $target.append($tooltipEl);
+      }
+      $target.css('position', 'relative');
+      $tooltipEl.css('display', 'inline');
+      $target.mouseleave(function() {
+        $tooltipEl.css('display', 'none');
+      });
+    }
     function setLoadingTooltip($elem){
-      $elem.attr('data-tip', "Calculating..");
+      var html = '<span class="crypto-correct-text">Calculating...</span>';
+      setTooltip($elem, html);
     }
 
     function setTotalAndUnitTooltip($target, inBtc, coinUnits) {
@@ -32,11 +56,23 @@
       var coinPrice = parseFloat(coinUnits) * unitPrice;
       coinPrice = (coinPrice === 0) ? 0 :
           (coinPrice > 1) ? coinPrice.toFixed(2) : coinPrice.toFixed(6);
-      $target.attr('data-tip',
-          "Total: $" + coinPrice+"\n"+
-          "Rate: $"+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))
-      );
+      var html =
+          '<span class="crypto-correct-text">'+
+            'Total: <span class="crypto-correct-price">$' + coinPrice+"</span><br />"+
+            'Rate: : <span class="crypto-correct-price">$'+ ((unitPrice> 1) ? unitPrice.toFixed(2) : unitPrice.toFixed(6))+'</span>'+
+           '</span>'
+      ;
+      setTooltip($target, html, true);
     }
+
+  function setPriceTooltip($elem, basePriceInUSD) {
+    var price = $elem.text();
+    var inUSD = parseFloat(basePriceInUSD) * parseFloat(price);
+    inUSD = (inUSD === 0) ? 0 :
+        (inUSD > 1) ? inUSD.toFixed(2) : inUSD.toFixed(6);
+    var html = "<span class='crypto-correct-price'>$" + inUSD + "</span>";
+    setTooltip($elem, html);
+  }
 
 	function initializeBalancePage(){
       var headerNames = ["Available Balance", "Pending Deposit", "Reserved", "Total", "Est. BTC Value", "Units"];
@@ -51,13 +87,13 @@
           return;
         }
         if($(window).width() - ($target.offset().left + $target.width()) < 150){
-          if(!$target.hasClass('closeToScreen')){
-            $target.addClass('closeToScreen');
+          if(!$tooltipEl.hasClass('closeToScreen')){
+            $tooltipEl.addClass('closeToScreen');
           }
         }
         else{
-          if($target.hasClass('closeToScreen')){
-            $target.removeClass('closeToScreen');
+          if($tooltipEl.hasClass('closeToScreen')){
+            $tooltipEl.removeClass('closeToScreen');
           }
         }
         if(headerName === "Est. BTC Value"){
@@ -234,14 +270,6 @@
         }
       });
     }
-  }
-
-  function setPriceTooltip($elem, basePriceInUSD) {
-    var price = $elem.text();
-    var inUSD = parseFloat(basePriceInUSD) * parseFloat(price);
-    inUSD = (inUSD === 0) ? 0 :
-        (inUSD > 1) ? inUSD.toFixed(2) : inUSD.toFixed(6);
-    $elem.attr('data-tip', "$" + inUSD);
   }
 
   $.expr.filters.offscreen = function(el) {
