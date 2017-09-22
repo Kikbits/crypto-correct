@@ -6,9 +6,92 @@
   var $tooltipEl = $(
       '<div id="crypto-correct-tooltip"></div>'
   );
+  var oneMinDataBTC;
+  var fiveMinDataBTC;
+  var thirtyMinDataBTC;
+  var dayDataBTC;
+    var hourDataBTC;
+    var oneMinDataETH;
+    var fiveMinDataETH;
+    var thirtyMinDataETH;
+    var hourDataETH;
+    var dayDataETH;
+
+    function callApi(market){
+        if (!localStorage.getItem('oneMinData'+market) || (new Date()-Date.parse(localStorage.getItem('oneMinData'+market)))>300000){
+            $.ajax({
+                url : "https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=USDT-"+market+"&tickInterval=oneMin",
+                dataType : 'json',
+                type : 'GET'
+            }).done(function(res, textStatus, jqXHR ){
+                if (market=='BTC')
+                    oneMinDataBTC=res;
+                else
+                    oneMinDataETH=res;
+                localStorage.setItem('oneMinData'+market, new Date());
+            });
+        }
+        if (!localStorage.getItem('fiveMinData'+market) || (new Date()-Date.parse(localStorage.getItem('fiveMinData'+market)))>300000) {
+            $.ajax({
+                url: "https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=USDT-"+market+"&tickInterval=fiveMin",
+                dataType: 'json',
+                type: 'GET'
+            }).done(function (res, textStatus, jqXHR) {
+                if (market=='BTC')
+                    fiveMinDataBTC = res;
+                else
+                    fiveMinDataETH=res;
+                localStorage.setItem('fiveMinData'+market, new Date());
+            });
+        }
+        if (!localStorage.getItem('thirtyMinData'+market) || (new Date()-Date.parse(localStorage.getItem('thirtyMinData'+market)))>1800000) {
+            $.ajax({
+                url: "https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=USDT-"+market+"&tickInterval=thirtyMin&",
+                dataType: 'json',
+                type: 'GET'
+            }).done(function (res, textStatus, jqXHR) {
+                if (market=='BTC')
+                    thirtyMinDataBTC = res;
+                else
+                    thirtyMinDataETH=res;
+                localStorage.setItem('thirtyMinData'+market,  new Date());
+            });
+        }
+        if (!localStorage.getItem('dayData'+market) || (new Date()-Date.parse(localStorage.getItem('dayData'+market)))>86400000) {
+            $.ajax({
+                url: "https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=USDT-"+market+"&tickInterval=day",
+                dataType: 'json',
+                type: 'GET'
+            }).done(function (res, textStatus, jqXHR) {
+                if (market=='BTC')
+                    dayDataBTC = res;
+                else
+                    dayDataETH=res;
+                localStorage.setItem('dayData'+market,  new Date());
+            });
+        }
+        if (!localStorage.getItem('hourData'+market) || (new Date()-Date.parse(localStorage.getItem('hourData'+market)))>3600000) {
+            $.ajax({
+                url: "https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=USDT-"+market+"&tickInterval=hour",
+                dataType: 'json',
+                type: 'GET'
+            }).done(function (res, textStatus, jqXHR) {
+                if (market=='BTC')
+                    hourDataBTC = res;
+                else
+                    hourDataETH=res;
+                localStorage.setItem('hourData'+market,  new Date());
+            });
+        }
+    }
 	function init() {
+
     window.onload = function () {
       var pageType = getPageType();
+        callApi(marketName);
+        setInterval(function(){
+            callApi(marketName);
+        }, 60000);
 
       if (pageType == "EXCHANGE_PAGE") {
         initializeExchangePage();
@@ -168,9 +251,99 @@
       var header = $target.closest("table").find("th:nth-child(" + ($target.index() + 1) + ")").text();
 
       if (header && (header.indexOf("Bid/Ask") != -1 || header.indexOf("Actual Rate") != -1 || header.indexOf("Cost") != -1)) {
-        setPriceTooltip($target, priceInUSD(marketName));
+
+
+        //setPriceTooltip($target, priceInUSD(marketName));
+       setPriceTooltip($target, historicalPriceInUSD(marketName,$(this).closest("tr.odd,tr.even").find("td.date.sorting_1").text()));
       }
     });
+  }
+  function getHistoricalBTCtoUSD(dateTime,oneMinData,fiveMinData,thirtyMinData,hourData,dayData){
+    var time=dateTime.split(' ')[1]+' '+dateTime.split(' ')[2];
+    var localDateTime=dateTime.split(' ')[0]+' '+convertTime12to24(time);
+    var daysDifference=parseInt(((new Date())- new Date(localDateTime))/(24*3600*1000));
+    var UTCtime = new Date(localDateTime).toISOString();
+    if (daysDifference<=9){
+      for (var i =0;i<oneMinData.result.length;i++){
+
+        var difference = ((new Date(UTCtime))-(new Date(oneMinData.result[i].T)));
+        var diffMins = Math.floor((difference/1000)/60);
+        if(diffMins<=1){
+          return oneMinData.result[i].O;
+          break;
+        }
+      }
+        if (oneMinData.result && oneMinData.result.length)
+            return oneMinData.result[oneMinData.result.length-1].O;
+    }
+    else if (daysDifference<19){
+      for (var i =0;i<fiveMinData.result.length;i++){
+
+        var difference = ((new Date(UTCtime))-(new Date(fiveMinData.result[i].T)));
+        var diffMins = Math.floor((difference/1000)/60);
+        if(diffMins<=5){
+          return fiveMinData.result[i].O;
+          break;
+        }
+      }
+        if (fiveMinData.result && fiveMinData.result.length)
+            return fiveMinData.result[fiveMinData.result.length-1].O;
+    }
+    else if (daysDifference<39){
+      for (var i =0;i<thirtyMinData.result.length;i++){
+
+        var difference = ((new Date(UTCtime))-(new Date(thirtyMinData.result[i].T)));
+        var diffMins = Math.floor((difference/1000)/60);
+        if(diffMins<=35){
+          return thirtyMinData.result[i].O;
+          break;
+        }
+      }
+        if (thirtyMinData.result && thirtyMinData.result.length)
+            return thirtyMinData.result[thirtyMinData.result.length-1].O;
+    }
+    else if (daysDifference<58){
+        for (var i =0;i<hourData.result.length;i++){
+
+            var difference = ((new Date(UTCtime))-(new Date(hourData.result[i].T)));
+            var diffMins = Math.floor((difference/1000)/60);
+            if(diffMins<=65){
+                return hourData.result[i].O;
+                break;
+            }
+        }
+        if (hourData.result && hourData.result.length)
+            return hourData.result[hourData.result.length-1].O;
+    }
+    else if (daysDifference<92400){
+      for (var i =0;i<dayData.result.length;i++){
+
+        var difference = ((new Date(UTCtime))-(new Date(dayData.result[i].T)));
+        var diffMins = Math.floor((difference/1000)/60);
+        if(diffMins<=1240){
+          return dayData.result[i].O;
+          break;
+        }
+      }
+        if (dayData.result && dayData.result.length)
+            return dayData.result[dayData.result.length-1].O;
+    }
+
+  }
+  function convertTime12to24(time12h) {
+    const [time, modifier] = time12h.split(' ');
+
+    let [hours, minutes] = time.split(':');
+
+    if (hours === '12') {
+      hours = '00';
+    }
+
+    if (modifier === 'PM') {
+      hours = parseInt(hours, 10) + 12;
+    }
+
+    return hours + ':' + minutes;
   }
 
   function btcTooltip(){
@@ -219,6 +392,17 @@
     }
     else if (marketName == "ETH" || marketName == "eth") {
       priceInUSD = getETHtoUSD()
+    }
+
+    return priceInUSD;
+  }
+  function historicalPriceInUSD(marketName,date) {
+    var priceInUSD = null;
+    if (marketName == "BTC" || marketName == "btc") {
+      priceInUSD = getHistoricalBTCtoUSD(date,oneMinDataBTC,fiveMinDataBTC,thirtyMinDataBTC,hourDataBTC,dayDataBTC);
+    }
+    else if (marketName == "ETH" || marketName == "eth") {
+      priceInUSD = getHistoricalBTCtoUSD(date,oneMinDataETH,fiveMinDataETH,thirtyMinDataETH,hourDataETH,dayDataETH)
     }
 
     return priceInUSD;
